@@ -1,6 +1,6 @@
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class SolutionTest {
     @Test
@@ -30,8 +30,8 @@ public class SolutionTest {
                 {0, 0, 1, 0, 1},
                 {0, 0, 1, 1, 0}}};
 
-        assertEquals(answers[0], Nonogram.solve(clues[0]));
-        assertEquals(answers[1], Nonogram.solve(clues[1]));
-        assertEquals(answers[2], Nonogram.solve(clues[2]));
+        assertArrayEquals(answers[0], Nonogram.solve(clues[0]));
+        assertArrayEquals(answers[1], Nonogram.solve(clues[1]));
+        assertArrayEquals(answers[2], Nonogram.solve(clues[2]));
     }
 }
