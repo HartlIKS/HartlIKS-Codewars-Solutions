@@ -4,34 +4,56 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class SolutionTest {
     @Test
-    public void sampleCases() {
-        int[][][][] clues = new int[][][][] {
-            {{{1, 1}, {4}, {1, 1, 1}, {3}, {1}},
-                {{1}, {2}, {3}, {2, 1}, {4}}},
-            {{{1}, {3}, {1}, {3, 1}, {3, 1}},
-                {{3}, {2}, {2, 2}, {1}, {1, 2}}},
-            {{{2}, {3}, {4}, {1, 1}, {1, 1}},
-                {{2}, {3, 1}, {3}, {1, 1}, {2}}}};
+    public void sampleCase1() {
+        int[][][] clues = {
+            {{1, 1}, {4}, {1, 1, 1}, {3}, {1}},
+            {{1}, {2}, {3}, {2, 1}, {4}}
+        };
 
-        int[][][] answers = new int[][][]{
-            {{0, 0, 1, 0, 0},
-                {1, 1, 0, 0, 0},
-                {0, 1, 1, 1, 0},
-                {1, 1, 0, 1, 0},
-                {0, 1, 1, 1, 1}},
-            {{0, 0, 1, 1, 1},
-                {0, 0, 0, 1, 1},
-                {1, 1, 0, 1, 1},
-                {0, 1, 0, 0, 0},
-                {0, 1, 0, 1, 1}},
-            {{1, 1, 0, 0, 0},
-                {1, 1, 1, 0, 1},
-                {0, 1, 1, 1, 0},
-                {0, 0, 1, 0, 1},
-                {0, 0, 1, 1, 0}}};
+        int[][] answers = {
+            {0, 0, 1, 0, 0},
+            {1, 1, 0, 0, 0},
+            {0, 1, 1, 1, 0},
+            {1, 1, 0, 1, 0},
+            {0, 1, 1, 1, 1}
+        };
 
-        assertArrayEquals(answers[0], Nonogram.solve(clues[0]));
-        assertArrayEquals(answers[1], Nonogram.solve(clues[1]));
-        assertArrayEquals(answers[2], Nonogram.solve(clues[2]));
+        assertArrayEquals(answers, Nonogram.solve(clues));
+    }
+
+    @Test
+    public void sampleCase2() {
+        int[][][] clues = {
+            {{1}, {3}, {1}, {3, 1}, {3, 1}},
+            {{3}, {2}, {2, 2}, {1}, {1, 2}}
+        };
+
+        int[][] answers = {
+            {0, 0, 1, 1, 1},
+            {0, 0, 0, 1, 1},
+            {1, 1, 0, 1, 1},
+            {0, 1, 0, 0, 0},
+            {0, 1, 0, 1, 1}
+        };
+
+        assertArrayEquals(answers, Nonogram.solve(clues));
+    }
+
+    @Test
+    public void sampleCase3() {
+        int[][][] clues = {
+            {{2}, {3}, {4}, {1, 1}, {1, 1}},
+            {{2}, {3, 1}, {3}, {1, 1}, {2}}
+        };
+
+        int[][] answers = {
+            {1, 1, 0, 0, 0},
+            {1, 1, 1, 0, 1},
+            {0, 1, 1, 1, 0},
+            {0, 0, 1, 0, 1},
+            {0, 0, 1, 1, 0}
+        };
+
+        assertArrayEquals(answers, Nonogram.solve(clues));
     }
 }

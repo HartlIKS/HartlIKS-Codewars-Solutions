@@ -5,14 +5,14 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Nonogram {
-    public static final int WIDTH = 5;
-    public static final int HEIGHT = 5;
+    private static int width;
+    private static int height;
 
     private record Point(int x, int y) {
         public static final Point ORIGIN = new Point(0, 0);
 
         public Stream<Point> row() {
-            return IntStream.range(0, WIDTH)
+            return IntStream.range(0, width)
                 .mapToObj(this::row);
         }
 
@@ -21,7 +21,7 @@ public class Nonogram {
         }
 
         public Stream<Point> col() {
-            return IntStream.range(0, HEIGHT)
+            return IntStream.range(0, height)
                 .mapToObj(this::col);
         }
 
@@ -34,19 +34,12 @@ public class Nonogram {
         }
 
         public <T> IntFunction<T> alterCol(final Function<? super Point, T> original, final T replacement) {
-            return i -> i == x ? replacement : original.apply(col(i));
+            return i -> i == y ? replacement : original.apply(col(i));
         }
     }
 
     private enum Options {
         TRUE, FALSE;
-
-        public Options negate() {
-            return switch (this) {
-                case TRUE -> FALSE;
-                case FALSE -> TRUE;
-            };
-        }
 
         public int toInt() {
             return switch (this) {
@@ -57,9 +50,24 @@ public class Nonogram {
 
     }
 
-    private record BRex(Options val, boolean optional, boolean repeatable, BRex next) {
+    private interface IBRex {
+        IBRex TERMINATOR = new IBRex() {
+            @Override
+            public boolean matches(IntFunction<EnumSet<Options>> input, int length) {
+                return length == 0;
+            }
+
+            @Override
+            public String toString() {
+                return "$";
+            }
+        };
+        boolean matches(IntFunction<EnumSet<Options>> input, int length);
+    }
+
+    private record BRex(Options val, boolean optional, boolean repeatable, IBRex next) implements IBRex {
         public static BRex parse(int[] values, int i) {
-            if (values.length == i) return new BRex(Options.FALSE, true, true, null);
+            if (values.length == i) return new BRex(Options.FALSE, true, true, IBRex.TERMINATOR);
             else {
                 BRex ret = parse(values, i + 1);
                 for (int j = 0; j < values[i]; j++) {
@@ -67,10 +75,6 @@ public class Nonogram {
                 }
                 return new BRex(Options.FALSE, i == 0, true, ret);
             }
-        }
-
-        private boolean acceptsEmpty() {
-            return optional && (next == null || next.acceptsEmpty());
         }
 
         @Override
@@ -81,55 +85,19 @@ public class Nonogram {
                 case 2 -> "+";
                 case 3 -> "*";
                 default -> "@";
-            }, Optional.ofNullable(next).map(BRex::toString).orElse(""));
-        }
-
-        private void debugPrint(IntFunction<EnumSet<Options>> input, int length) {
-            System.err.printf("%s testing:%n", this);
-            for(int i=0;i<length;i++) {
-                System.err.printf("%s ", input.apply(i));
-            }
-            System.err.println();
+            }, Optional.ofNullable(next).map(IBRex::toString).orElse(""));
         }
 
         public boolean matches(IntFunction<EnumSet<Options>> input, int length) {
-            if(length == 0) {
-                if(!optional) {
-                    debugPrint(input, length);
-                    System.err.println("Rejected by non-optional");
-                    return false;
-                }
-                return next == null || next.matches(input, length);
+            if (length == 0) {
+                if (!optional) return false;
+                return next.matches(input, length);
             } else {
-                if(optional && next != null && next.matches(input, length)) {
-                    debugPrint(input, length);
-                    System.err.println("Accepted optional by child match");
-                    return true;
-                }
-                if(!input.apply(0).contains(val)) {
-                    debugPrint(input, length);
-                    System.err.println("Rejected by value mismatch");
-                    return false;
-                }
-                if(next == null && length == 1) {
-                    debugPrint(input, length);
-                    System.err.println("Accepted end by value match");
-                    return true;
-                }
-                final IntFunction nextInput = i -> input.apply(i-1);
-                if(next != null && next.matches(nextInput, length-1)) {
-                    debugPrint(input, length);
-                    System.err.println("Accepted by child match");
-                    return true;
-                }
-                if(repeatable && matches(nextInput, length-1)) {
-                    debugPrint(input, length);
-                    System.err.println("Accepted by repeat match");
-                    return true;
-                }
-                debugPrint(input, length);
-                System.err.println("Rejected by lack of child matches");
-                return false;
+                if (optional && next.matches(input, length)) return true;
+                if (!input.apply(0).contains(val)) return false;
+                final IntFunction<EnumSet<Options>> nextInput = i -> input.apply(i + 1);
+                if (next.matches(nextInput, length - 1)) return true;
+                return repeatable && matches(nextInput, length - 1);
             }
         }
     }
@@ -148,24 +116,25 @@ public class Nonogram {
         }
 
         public boolean canHaveValue(Function<Point, EnumSet<Options>> board, Point point, Options value) {
-
             return brex.matches(
                 col ?
                     point.alterCol(board, EnumSet.of(value)) :
                     point.alterRow(board, EnumSet.of(value)),
-                col ? HEIGHT : WIDTH
+                col ? height : width
             );
         }
     }
 
-    public static int[][] solve(final int[][][] clues) {
+    public static synchronized int[][] solve(final int[][][] clues) {
         final Clue[] colClues = Arrays.stream(clues[0])
             .map(Clue::col)
             .toArray(Clue[]::new);
+        width = colClues.length;
         final Clue[] rowClues = Arrays.stream(clues[1])
             .map(Clue::row)
             .toArray(Clue[]::new);
-        final Map<Point, EnumSet<Options>> board = new HashMap<>(WIDTH * HEIGHT);
+        height = rowClues.length;
+        final Map<Point, EnumSet<Options>> board = new HashMap<>(width * height);
         final Function<Point, EnumSet<Options>> boardAccess = p -> board.computeIfAbsent(
             p,
             p2 -> EnumSet.allOf(Options.class)
@@ -187,13 +156,6 @@ public class Nonogram {
             }
             if (!delta) break;
         }
-        Point.ORIGIN.col()
-            .forEach(p -> {
-                p.row()
-                    .map(boardAccess)
-                    .forEach(opt -> System.err.printf("%s ", opt));
-                System.err.println();
-            });
         return Point.ORIGIN.col()
             .map(Point::row)
             .map(s -> s.map(boardAccess)
