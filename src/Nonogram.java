@@ -167,4 +167,15 @@ public class Nonogram {
 
     }
 
+    // Just to make 15x15 Kata work
+
+    private final int[][][] clues;
+
+    public Nonogram(int[][][] clues) {
+        this.clues = clues;
+    }
+
+    public int[][] solve() {
+        return solve(clues);
+    }
 }
